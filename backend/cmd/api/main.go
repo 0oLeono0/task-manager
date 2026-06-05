@@ -66,5 +66,9 @@ func (app *application) getTasksHandler(w http.ResponseWriter, r *http.Request) 
 		{ID: 2, Title: "Build API", Completed: true},
 	}
 
-	app.writeJSON(w, http.StatusOK, tasks)
+	err := app.writeJSON(w, http.StatusOK, tasks)
+	if err != nil {
+		app.logger.Println(err)
+		return
+	}
 }
