@@ -25,6 +25,10 @@ type task struct {
 	Completed bool   `json:"completed"`
 }
 
+type errorResponse struct {
+	Err string `json:"error"`
+}
+
 func main() {
 	var cfg config
 	flag.StringVar(&cfg.serverAddr, "addr", ":8080", "HTTP server address")
@@ -54,6 +58,13 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data any) e
 	w.WriteHeader(status)
 
 	return json.NewEncoder(w).Encode(data)
+}
+
+func (app *application) errorJSON(w http.ResponseWriter, status int, message string) {
+	err := app.writeJSON(w, status, errorResponse{message})
+	if err != nil {
+		app.logger.Println(err)
+	}
 }
 
 func (app *application) healthHandler(w http.ResponseWriter, r *http.Request) {
