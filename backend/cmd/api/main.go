@@ -9,10 +9,16 @@ import (
 )
 
 func main() {
-	r := chi.NewRouter()
-
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Привет")
-	})
+	r := router()
 	log.Fatal(http.ListenAndServe(":8080", r))
+}
+
+func hello(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "ok")
+}
+
+func router() *chi.Mux {
+	r := chi.NewRouter()
+	r.Get("/health", hello)
+	return r
 }
