@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -16,6 +17,12 @@ type application struct {
 
 type config struct {
 	serverAddr string
+}
+
+type task struct {
+	ID        int    `json:"id"`
+	Title     string `json:"title"`
+	Completed bool   `json:"completed"`
 }
 
 func main() {
@@ -38,9 +45,20 @@ func main() {
 func (app *application) router() *chi.Mux {
 	r := chi.NewRouter()
 	r.Get("/health", app.healthHandler)
+	r.Get("/tasks", app.getTasksHandler)
 	return r
 }
 
 func (app *application) healthHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "ok")
+}
+
+func (app *application) getTasksHandler(w http.ResponseWriter, r *http.Request) {
+	tasks := []task{
+		{ID: 1, Title: "Learn Go", Completed: false},
+		{ID: 2, Title: "Build API", Completed: true},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(tasks)
 }
