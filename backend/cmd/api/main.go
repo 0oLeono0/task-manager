@@ -31,6 +31,7 @@ func main() {
 
 	r := app.router()
 
+	app.logger.Printf("server starting on address: %s", app.cfg.serverAddr)
 	app.logger.Fatal(http.ListenAndServe(app.cfg.serverAddr, r))
 }
 
