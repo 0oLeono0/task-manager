@@ -10,16 +10,26 @@ import (
 
 type application struct {
 	logger *log.Logger
+	cfg config
+}
+
+type config struct {
+	serverAddr string
 }
 
 func main() {
+	cfg := config{
+		serverAddr: ":8080",
+	}
+
 	app := &application{
 		logger: log.Default(),
+		cfg: cfg,
 	}
 
 	r := app.router()
 
-	app.logger.Fatal(http.ListenAndServe(":8080", r))
+	app.logger.Fatal(http.ListenAndServe(app.cfg.serverAddr, r))
 }
 
 func (app *application) router() *chi.Mux {
