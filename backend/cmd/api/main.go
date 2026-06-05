@@ -13,12 +13,12 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
-func hello(w http.ResponseWriter, r *http.Request) {
+func healthHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "ok")
 }
 
 func router() *chi.Mux {
 	r := chi.NewRouter()
-	r.Get("/health", hello)
+	r.Get("/health", healthHandler)
 	return r
 }
