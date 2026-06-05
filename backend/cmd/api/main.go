@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,7 +11,7 @@ import (
 
 type application struct {
 	logger *log.Logger
-	cfg config
+	cfg    config
 }
 
 type config struct {
@@ -18,13 +19,14 @@ type config struct {
 }
 
 func main() {
-	cfg := config{
-		serverAddr: ":8080",
-	}
+	var cfg config
+	flag.StringVar(&cfg.serverAddr, "addr", ":8080", "HTTP server address")
+
+	flag.Parse()
 
 	app := &application{
 		logger: log.Default(),
-		cfg: cfg,
+		cfg:    cfg,
 	}
 
 	r := app.router()
