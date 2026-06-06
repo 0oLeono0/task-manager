@@ -26,6 +26,11 @@ type task struct {
 	Completed bool   `json:"completed"`
 }
 
+type createTaskInput struct {
+	Title     string `json:"title"`
+	Completed bool   `json:"completed"`
+}
+
 type errorResponse struct {
 	Err string `json:"error"`
 }
@@ -52,6 +57,7 @@ func (app *application) router() *chi.Mux {
 	r.Get("/health", app.healthHandler)
 	r.Get("/tasks", app.getTasksHandler)
 	r.Get("/tasks/{id}", app.getTaskHandler)
+	r.Post("/tasks", app.createTaskHandler)
 	return r
 }
 
@@ -115,4 +121,30 @@ func (app *application) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	app.errorJSON(w, http.StatusNotFound, "task not found")
+}
+
+func (app *application) createTaskHandler(w http.ResponseWriter, r *http.Request) {
+	inputTask := createTaskInput{}
+	err := app.readJSON(r, &inputTask)
+	if err != nil {
+		app.logger.Println(err)
+		app.errorJSON(w, http.StatusBadRequest, "invalid task")
+		return
+	}
+	if inputTask.Title == "" {
+		app.errorJSON(w, http.StatusBadRequest, "title is required")
+		return
+	}
+
+	createdTask := task{
+		ID:        len(sampleTasks()) + 1,
+		Title:     inputTask.Title,
+		Completed: inputTask.Completed,
+	}
+
+	err = app.writeJSON(w, http.StatusCreated, createdTask)
+	if err != nil {
+		app.logger.Println(err)
+		return
+	}
 }
