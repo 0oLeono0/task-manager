@@ -36,6 +36,11 @@ type createTaskInput struct {
 	Completed bool   `json:"completed"`
 }
 
+type updateTaskInput struct {
+	Title     *string `json:"title"`
+	Completed *bool   `json:"completed"`
+}
+
 type errorResponse struct {
 	Err string `json:"error"`
 }
@@ -66,6 +71,7 @@ func (app *application) router() *chi.Mux {
 	r.Get("/tasks", app.getTasksHandler)
 	r.Get("/tasks/{id}", app.getTaskHandler)
 	r.Post("/tasks", app.createTaskHandler)
+	r.Patch("/tasks/{id}", app.updateTaskHandler)
 	return r
 }
 
@@ -174,4 +180,50 @@ func (app *application) createTaskHandler(w http.ResponseWriter, r *http.Request
 		app.logger.Println(err)
 		return
 	}
+}
+
+func (app *application) updateTaskHandler(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "id")
+
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		app.errorJSON(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+
+	inputTask := updateTaskInput{}
+	err = app.readJSON(r, &inputTask)
+	if err != nil {
+		app.errorJSON(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+
+	var updatedTask task
+	var found bool
+
+	app.mu.Lock()
+	for i := range app.tasks {
+		if app.tasks[i].ID == id {
+			found = true
+			if inputTask.Title != nil {
+				app.tasks[i].Title = *inputTask.Title
+			}
+
+			if inputTask.Completed != nil {
+				app.tasks[i].Completed = *inputTask.Completed
+			}
+			updatedTask = app.tasks[i]
+			break
+		}
+	}
+	app.mu.Unlock()
+
+	if found {
+		err = app.writeJSON(w, http.StatusOK, updatedTask)
+		if err != nil {
+			app.logger.Println(err)
+		}
+		return
+	}
+	app.errorJSON(w, http.StatusNotFound, "task not found")
 }
