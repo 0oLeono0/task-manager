@@ -72,6 +72,7 @@ func (app *application) router() *chi.Mux {
 	r.Get("/tasks/{id}", app.getTaskHandler)
 	r.Post("/tasks", app.createTaskHandler)
 	r.Patch("/tasks/{id}", app.updateTaskHandler)
+	r.Delete("/tasks/{id}", app.deleteTaskHandler)
 	return r
 }
 
@@ -223,6 +224,32 @@ func (app *application) updateTaskHandler(w http.ResponseWriter, r *http.Request
 		if err != nil {
 			app.logger.Println(err)
 		}
+		return
+	}
+	app.errorJSON(w, http.StatusNotFound, "task not found")
+}
+
+func (app *application) deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		app.errorJSON(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+
+	var found bool
+	app.mu.Lock()
+	for i := range app.tasks {
+		if app.tasks[i].ID == id {
+			found = true
+			app.tasks = append(app.tasks[:i], app.tasks[i+1:]...)
+			break
+		}
+	}
+	app.mu.Unlock()
+
+	if found {
+		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 	app.errorJSON(w, http.StatusNotFound, "task not found")
