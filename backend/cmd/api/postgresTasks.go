@@ -82,3 +82,19 @@ func (p *postgresTaskStore) updateTask(id int, title *string, completed *bool) (
 	}
 	return task, nil
 }
+
+func (p *postgresTaskStore) deleteTask(id int) error {
+	res, err := p.db.Exec(`DELETE FROM tasks WHERE id = $1`, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}

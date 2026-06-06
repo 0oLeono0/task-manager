@@ -123,9 +123,14 @@ func (app *application) deleteTaskHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.memoryStore.deleteTask(id)
+	err = app.postgresStore.deleteTask(id)
 	if err != nil {
-		app.errorJSON(w, http.StatusNotFound, "task not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			app.errorJSON(w, http.StatusNotFound, "task not found")
+			return
+		}
+		app.logger.Println(err)
+		app.errorJSON(w, http.StatusInternalServerError, "server error")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
