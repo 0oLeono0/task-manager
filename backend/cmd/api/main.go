@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -50,6 +51,7 @@ func (app *application) router() *chi.Mux {
 	r := chi.NewRouter()
 	r.Get("/health", app.healthHandler)
 	r.Get("/tasks", app.getTasksHandler)
+	r.Get("/tasks/{id}", app.getTaskHandler)
 	return r
 }
 
@@ -71,15 +73,42 @@ func (app *application) healthHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "ok")
 }
 
-func (app *application) getTasksHandler(w http.ResponseWriter, r *http.Request) {
-	tasks := []task{
+func sampleTasks() []task {
+	return []task{
 		{ID: 1, Title: "Learn Go", Completed: false},
 		{ID: 2, Title: "Build API", Completed: true},
 	}
+}
+
+func (app *application) getTasksHandler(w http.ResponseWriter, r *http.Request) {
+	tasks := sampleTasks()
 
 	err := app.writeJSON(w, http.StatusOK, tasks)
 	if err != nil {
 		app.logger.Println(err)
 		return
 	}
+}
+
+func (app *application) getTaskHandler(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "id")
+
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		app.errorJSON(w, http.StatusBadRequest, "invalid task id")
+		return
+	}
+
+	tasks := sampleTasks()
+	for _, task := range tasks {
+		if task.ID == id {
+			err = app.writeJSON(w, http.StatusOK, task)
+			if err != nil {
+				app.logger.Println(err)
+				return
+			}
+			return
+		}
+	}
+	app.errorJSON(w, http.StatusNotFound, "task not found")
 }
