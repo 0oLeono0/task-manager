@@ -12,7 +12,6 @@ import (
 type application struct {
 	logger        *log.Logger
 	cfg           config
-	memoryStore   *taskStore
 	postgresStore *postgresTaskStore
 }
 
@@ -46,14 +45,9 @@ func main() {
 
 	logger.Print("success connect to db")
 
-	tasks := sampleTasks()
 	app := &application{
 		logger: logger,
 		cfg:    cfg,
-		memoryStore: &taskStore{
-			tasks:  tasks,
-			nextID: len(tasks) + 1,
-		},
 		postgresStore: &postgresTaskStore{
 			db: db,
 		},
