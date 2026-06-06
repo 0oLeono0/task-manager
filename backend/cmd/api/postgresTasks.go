@@ -56,3 +56,29 @@ func (p *postgresTaskStore) createTask(title string, completed bool) (task, erro
 	}
 	return task, nil
 }
+
+func (p *postgresTaskStore) updateTask(id int, title *string, completed *bool) (task, error) {
+	task, err := p.getTaskByID(id)
+	if err != nil {
+		return task, err
+	}
+
+	if title != nil {
+		task.Title = *title
+	}
+	if completed != nil {
+		task.Completed = *completed
+	}
+
+	row := p.db.QueryRow(`UPDATE tasks 
+	SET title = $1, 
+	completed = $2,
+	updated_at = now() WHERE id = $3
+	RETURNING id, title, completed`, task.Title, task.Completed, id)
+
+	err = row.Scan(&task.ID, &task.Title, &task.Completed)
+	if err != nil {
+		return task, err
+	}
+	return task, nil
+}

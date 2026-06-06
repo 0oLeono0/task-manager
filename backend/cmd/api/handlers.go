@@ -98,9 +98,14 @@ func (app *application) updateTaskHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	updatedTask, err := app.memoryStore.updateTask(id, inputTask.Title, inputTask.Completed)
+	updatedTask, err := app.postgresStore.updateTask(id, inputTask.Title, inputTask.Completed)
 	if err != nil {
-		app.errorJSON(w, http.StatusNotFound, "task not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			app.errorJSON(w, http.StatusNotFound, "task not found")
+			return
+		}
+		app.logger.Println(err)
+		app.errorJSON(w, http.StatusInternalServerError, "server error")
 		return
 	}
 	err = app.writeJSON(w, http.StatusOK, updatedTask)
