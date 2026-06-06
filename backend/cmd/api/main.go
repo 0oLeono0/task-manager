@@ -23,7 +23,7 @@ type config struct {
 func main() {
 	var cfg config
 	logger := log.Default()
-	flag.StringVar(&cfg.serverAddr, "addr", ":8081", "HTTP server address")
+	flag.StringVar(&cfg.serverAddr, "addr", ":8080", "HTTP server address")
 	flag.StringVar(&cfg.dsn, "db-dsn", "", "DSN")
 
 	flag.Parse()
