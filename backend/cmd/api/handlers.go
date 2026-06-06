@@ -1,6 +1,8 @@
 package main
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -36,9 +38,14 @@ func (app *application) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundTask, err := app.memoryStore.getTaskByID(id)
+	foundTask, err := app.postgresStore.getTaskByID(id)
 	if err != nil {
-		app.errorJSON(w, http.StatusNotFound, "task not found")
+		if errors.Is(err, sql.ErrNoRows) {
+			app.errorJSON(w, http.StatusNotFound, "task not found")
+			return
+		}
+		app.logger.Println(err)
+		app.errorJSON(w, http.StatusInternalServerError, "server error")
 		return
 	}
 	err = app.writeJSON(w, http.StatusOK, foundTask)

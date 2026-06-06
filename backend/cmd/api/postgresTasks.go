@@ -32,3 +32,14 @@ func (p *postgresTaskStore) getTasks() ([]task, error) {
 
 	return tasks, nil
 }
+
+func (p *postgresTaskStore) getTaskByID(id int) (task, error) {
+	var task task
+	row := p.db.QueryRow(`SELECT id, title, completed FROM tasks WHERE id = $1`, id)
+
+	err := row.Scan(&task.ID, &task.Title, &task.Completed)
+	if err != nil {
+		return task, err
+	}
+	return task, nil
+}
