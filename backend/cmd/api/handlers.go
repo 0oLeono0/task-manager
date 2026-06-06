@@ -13,9 +13,14 @@ func (app *application) healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) getTasksHandler(w http.ResponseWriter, r *http.Request) {
-	tasks := app.store.getTasks()
+	tasks, err := app.postgresStore.getTasks()
+	if err != nil {
+		app.logger.Println(err)
+		app.errorJSON(w, http.StatusInternalServerError, "server error")
+		return
+	}
 
-	err := app.writeJSON(w, http.StatusOK, tasks)
+	err = app.writeJSON(w, http.StatusOK, tasks)
 	if err != nil {
 		app.logger.Println(err)
 		return
@@ -31,7 +36,7 @@ func (app *application) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundTask, err := app.store.getTaskByID(id)
+	foundTask, err := app.memoryStore.getTaskByID(id)
 	if err != nil {
 		app.errorJSON(w, http.StatusNotFound, "task not found")
 		return
@@ -56,7 +61,7 @@ func (app *application) createTaskHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	createdTask := app.store.createTask(inputTask.Title, inputTask.Completed)
+	createdTask := app.memoryStore.createTask(inputTask.Title, inputTask.Completed)
 	err = app.writeJSON(w, http.StatusCreated, createdTask)
 	if err != nil {
 		app.logger.Println(err)
@@ -80,7 +85,7 @@ func (app *application) updateTaskHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	updatedTask, err := app.store.updateTask(id, inputTask.Title, inputTask.Completed)
+	updatedTask, err := app.memoryStore.updateTask(id, inputTask.Title, inputTask.Completed)
 	if err != nil {
 		app.errorJSON(w, http.StatusNotFound, "task not found")
 		return
@@ -100,7 +105,7 @@ func (app *application) deleteTaskHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.store.deleteTask(id)
+	err = app.memoryStore.deleteTask(id)
 	if err != nil {
 		app.errorJSON(w, http.StatusNotFound, "task not found")
 		return

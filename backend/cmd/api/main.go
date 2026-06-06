@@ -10,9 +10,10 @@ import (
 )
 
 type application struct {
-	logger *log.Logger
-	cfg    config
-	store  *taskStore
+	logger        *log.Logger
+	cfg           config
+	memoryStore   *taskStore
+	postgresStore *postgresTaskStore
 }
 
 type config struct {
@@ -49,9 +50,12 @@ func main() {
 	app := &application{
 		logger: logger,
 		cfg:    cfg,
-		store: &taskStore{
+		memoryStore: &taskStore{
 			tasks:  tasks,
 			nextID: len(tasks) + 1,
+		},
+		postgresStore: &postgresTaskStore{
+			db: db,
 		},
 	}
 
