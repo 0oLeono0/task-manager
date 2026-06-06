@@ -43,3 +43,16 @@ func (p *postgresTaskStore) getTaskByID(id int) (task, error) {
 	}
 	return task, nil
 }
+
+func (p *postgresTaskStore) createTask(title string, completed bool) (task, error) {
+	var task task
+	row := p.db.QueryRow(`INSERT INTO tasks (title, completed) 
+	VALUES ($1, $2)
+	RETURNING id, title, completed`, title, completed)
+
+	err := row.Scan(&task.ID, &task.Title, &task.Completed)
+	if err != nil {
+		return task, err
+	}
+	return task, nil
+}

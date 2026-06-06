@@ -68,7 +68,13 @@ func (app *application) createTaskHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	createdTask := app.memoryStore.createTask(inputTask.Title, inputTask.Completed)
+	createdTask, err := app.postgresStore.createTask(inputTask.Title, inputTask.Completed)
+	if err != nil {
+		app.logger.Println(err)
+		app.errorJSON(w, http.StatusInternalServerError, "server error")
+		return
+	}
+
 	err = app.writeJSON(w, http.StatusCreated, createdTask)
 	if err != nil {
 		app.logger.Println(err)
