@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -15,10 +16,7 @@ import (
 type application struct {
 	logger *log.Logger
 	cfg    config
-
-	mu     sync.Mutex
-	tasks  []task
-	nextID int
+	store  *taskStore
 }
 
 type config struct {
@@ -29,6 +27,12 @@ type task struct {
 	ID        int    `json:"id"`
 	Title     string `json:"title"`
 	Completed bool   `json:"completed"`
+}
+
+type taskStore struct {
+	mu     sync.Mutex
+	tasks  []task
+	nextID int
 }
 
 type createTaskInput struct {
@@ -55,8 +59,10 @@ func main() {
 	app := &application{
 		logger: log.Default(),
 		cfg:    cfg,
-		tasks:  tasks,
-		nextID: len(tasks) + 1,
+		store: &taskStore{
+			tasks:  tasks,
+			nextID: len(tasks) + 1,
+		},
 	}
 
 	r := app.router()
@@ -94,10 +100,6 @@ func (app *application) readJSON(r *http.Request, dst any) error {
 	return json.NewDecoder(r.Body).Decode(dst)
 }
 
-func (app *application) healthHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "ok")
-}
-
 func sampleTasks() []task {
 	return []task{
 		{ID: 1, Title: "Learn Go", Completed: false},
@@ -105,11 +107,82 @@ func sampleTasks() []task {
 	}
 }
 
+func (store *taskStore) getTasks() []task {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	tasks := make([]task, len(store.tasks))
+	copy(tasks, store.tasks)
+	return tasks
+}
+
+func (store *taskStore) getTaskByID(id int) (task, error) {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	for i := range store.tasks {
+		if store.tasks[i].ID == id {
+			return store.tasks[i], nil
+		}
+	}
+
+	return task{}, errors.New("task not found")
+}
+
+func (store *taskStore) createTask(title string, completed bool) task {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
+	task := task{
+		ID:        store.nextID,
+		Title:     title,
+		Completed: completed,
+	}
+
+	store.tasks = append(store.tasks, task)
+	store.nextID++
+
+	return task
+}
+
+func (store *taskStore) updateTask(id int, title *string, completed *bool) (task, error) {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+
+	for i := range store.tasks {
+		if store.tasks[i].ID == id {
+			if title != nil {
+				store.tasks[i].Title = *title
+			}
+
+			if completed != nil {
+				store.tasks[i].Completed = *completed
+			}
+
+			return store.tasks[i], nil
+		}
+	}
+
+	return task{}, errors.New("task not found")
+}
+
+func (store *taskStore) deleteTask(id int) error {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	for i := range store.tasks {
+		if store.tasks[i].ID == id {
+			store.tasks = append(store.tasks[:i], store.tasks[i+1:]...)
+			return nil
+		}
+	}
+
+	return errors.New("task not found")
+}
+
+func (app *application) healthHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "ok")
+}
+
 func (app *application) getTasksHandler(w http.ResponseWriter, r *http.Request) {
-	app.mu.Lock()
-	tasks := make([]task, len(app.tasks))
-	copy(tasks, app.tasks)
-	app.mu.Unlock()
+	tasks := app.store.getTasks()
 
 	err := app.writeJSON(w, http.StatusOK, tasks)
 	if err != nil {
@@ -127,29 +200,16 @@ func (app *application) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var foundTask task
-	var found bool
-
-	app.mu.Lock()
-	tasks := make([]task, len(app.tasks))
-	copy(tasks, app.tasks)
-	for _, task := range tasks {
-		if task.ID == id {
-			foundTask = task
-			found = true
-		}
-	}
-	app.mu.Unlock()
-
-	if found {
-		err = app.writeJSON(w, http.StatusOK, foundTask)
-		if err != nil {
-			app.logger.Println(err)
-			return
-		}
+	foundTask, err := app.store.getTaskByID(id)
+	if err != nil {
+		app.errorJSON(w, http.StatusNotFound, "task not found")
 		return
 	}
-	app.errorJSON(w, http.StatusNotFound, "task not found")
+	err = app.writeJSON(w, http.StatusOK, foundTask)
+	if err != nil {
+		app.logger.Println(err)
+		return
+	}
 }
 
 func (app *application) createTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -165,17 +225,7 @@ func (app *application) createTaskHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	app.mu.Lock()
-	createdTask := task{
-		ID:        app.nextID,
-		Title:     inputTask.Title,
-		Completed: inputTask.Completed,
-	}
-
-	app.tasks = append(app.tasks, createdTask)
-	app.nextID++
-	app.mu.Unlock()
-
+	createdTask := app.store.createTask(inputTask.Title, inputTask.Completed)
 	err = app.writeJSON(w, http.StatusCreated, createdTask)
 	if err != nil {
 		app.logger.Println(err)
@@ -199,34 +249,16 @@ func (app *application) updateTaskHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	var updatedTask task
-	var found bool
-
-	app.mu.Lock()
-	for i := range app.tasks {
-		if app.tasks[i].ID == id {
-			found = true
-			if inputTask.Title != nil {
-				app.tasks[i].Title = *inputTask.Title
-			}
-
-			if inputTask.Completed != nil {
-				app.tasks[i].Completed = *inputTask.Completed
-			}
-			updatedTask = app.tasks[i]
-			break
-		}
-	}
-	app.mu.Unlock()
-
-	if found {
-		err = app.writeJSON(w, http.StatusOK, updatedTask)
-		if err != nil {
-			app.logger.Println(err)
-		}
+	updatedTask, err := app.store.updateTask(id, inputTask.Title, inputTask.Completed)
+	if err != nil {
+		app.errorJSON(w, http.StatusNotFound, "task not found")
 		return
 	}
-	app.errorJSON(w, http.StatusNotFound, "task not found")
+	err = app.writeJSON(w, http.StatusOK, updatedTask)
+	if err != nil {
+		app.logger.Println(err)
+		return
+	}
 }
 
 func (app *application) deleteTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -237,20 +269,10 @@ func (app *application) deleteTaskHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	var found bool
-	app.mu.Lock()
-	for i := range app.tasks {
-		if app.tasks[i].ID == id {
-			found = true
-			app.tasks = append(app.tasks[:i], app.tasks[i+1:]...)
-			break
-		}
-	}
-	app.mu.Unlock()
-
-	if found {
-		w.WriteHeader(http.StatusNoContent)
+	err = app.store.deleteTask(id)
+	if err != nil {
+		app.errorJSON(w, http.StatusNotFound, "task not found")
 		return
 	}
-	app.errorJSON(w, http.StatusNotFound, "task not found")
+	w.WriteHeader(http.StatusNoContent)
 }
