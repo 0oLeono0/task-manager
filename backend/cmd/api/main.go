@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -14,6 +15,10 @@ import (
 type application struct {
 	logger *log.Logger
 	cfg    config
+
+	mu     sync.Mutex
+	tasks  []task
+	nextID int
 }
 
 type config struct {
@@ -41,9 +46,12 @@ func main() {
 
 	flag.Parse()
 
+	tasks := sampleTasks()
 	app := &application{
 		logger: log.Default(),
 		cfg:    cfg,
+		tasks:  tasks,
+		nextID: len(tasks) + 1,
 	}
 
 	r := app.router()
@@ -91,7 +99,10 @@ func sampleTasks() []task {
 }
 
 func (app *application) getTasksHandler(w http.ResponseWriter, r *http.Request) {
-	tasks := sampleTasks()
+	app.mu.Lock()
+	tasks := make([]task, len(app.tasks))
+	copy(tasks, app.tasks)
+	app.mu.Unlock()
 
 	err := app.writeJSON(w, http.StatusOK, tasks)
 	if err != nil {
@@ -109,16 +120,27 @@ func (app *application) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tasks := sampleTasks()
+	var foundTask task
+	var found bool
+
+	app.mu.Lock()
+	tasks := make([]task, len(app.tasks))
+	copy(tasks, app.tasks)
 	for _, task := range tasks {
 		if task.ID == id {
-			err = app.writeJSON(w, http.StatusOK, task)
-			if err != nil {
-				app.logger.Println(err)
-				return
-			}
+			foundTask = task
+			found = true
+		}
+	}
+	app.mu.Unlock()
+
+	if found {
+		err = app.writeJSON(w, http.StatusOK, foundTask)
+		if err != nil {
+			app.logger.Println(err)
 			return
 		}
+		return
 	}
 	app.errorJSON(w, http.StatusNotFound, "task not found")
 }
@@ -136,11 +158,16 @@ func (app *application) createTaskHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	app.mu.Lock()
 	createdTask := task{
-		ID:        len(sampleTasks()) + 1,
+		ID:        app.nextID,
 		Title:     inputTask.Title,
 		Completed: inputTask.Completed,
 	}
+
+	app.tasks = append(app.tasks, createdTask)
+	app.nextID++
+	app.mu.Unlock()
 
 	err = app.writeJSON(w, http.StatusCreated, createdTask)
 	if err != nil {
