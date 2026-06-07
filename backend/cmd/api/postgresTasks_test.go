@@ -121,3 +121,47 @@ func TestPostgresTaskStore_GetTasks(t *testing.T) {
 		t.Fatalf("expected Completed %t, got %t", created2.Completed, tasks[1].Completed)
 	}
 }
+
+func TestPostgresTaskStore_UpdateTask(t *testing.T) {
+	store := connectToDB(t)
+
+	created, err := store.createTask("test task", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	newTitle := "updated title"
+	updated, err := store.updateTask(created.ID, &newTitle, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if updated.Title != newTitle {
+		t.Fatalf("expected title %s, got %s", newTitle, updated.Title)
+	}
+	if updated.Completed != created.Completed {
+		t.Fatalf("expected Completed %t, got %t", created.Completed, updated.Completed)
+	}
+
+	newCompleted := true
+	updated, err = store.updateTask(created.ID, nil, &newCompleted)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if updated.Completed != newCompleted {
+		t.Fatalf("expected completed %t, got %t", newCompleted, updated.Completed)
+	}
+	if updated.Title != newTitle {
+		t.Fatalf("expected title %s, got %s", newTitle, updated.Title)
+	}
+
+	found, err := store.getTaskByID(created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if found.Title != updated.Title || found.Completed != updated.Completed {
+		t.Fatalf("expected %+v, got %+v", updated, found)
+	}
+}
