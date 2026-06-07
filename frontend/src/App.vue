@@ -3,12 +3,19 @@ import { onMounted, ref } from 'vue'
 import { getTasks, type Task } from './api'
 
 const tasks = ref<Task[]>([])
-
 const input = ref('')
+const isLoading = ref(true)
+const errText = ref('')
 
 onMounted(async () => {
-  const fetchedTasks = await getTasks()
-  tasks.value = fetchedTasks
+  try {
+    const fetchedTasks = await getTasks()
+    tasks.value = fetchedTasks
+  } catch {
+    errText.value = 'Не удалось загрузить задачи. Попробуйте обновить страницу.'
+  } finally {
+    isLoading.value = false
+  }
 })
 
 const onSubmit = () => {
@@ -42,7 +49,10 @@ const toggleTaskCompleted = (id: number) => {
         <button type="submit">Добавить</button>
       </form>
 
-      <ul class="task-list" aria-label="Список задач">
+      <p v-if="isLoading" class="task-message">Загружаем задачи...</p>
+      <p v-else-if="errText" class="task-message task-message--error">{{ errText }}</p>
+
+      <ul v-else class="task-list" aria-label="Список задач">
         <li
           v-for="task in tasks"
           :key="task.id"

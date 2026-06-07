@@ -105,6 +105,21 @@ h1 {
   background: #244f9f;
 }
 
+.task-message {
+  margin: 0;
+  padding: 14px 16px;
+  color: #596579;
+  background: #ffffff;
+  border: 1px solid #d9dee8;
+  border-radius: 8px;
+}
+
+.task-message--error {
+  color: #8c2f2f;
+  background: #fff1f1;
+  border-color: #efb8b8;
+}
+
 .task-list {
   display: grid;
   gap: 10px;
