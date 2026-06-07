@@ -37,6 +37,13 @@ const onSubmit = () => {
   tasks.value.push(task)
   input.value = ""
 }
+
+const toggleTaskCompleted = (id: number) => {
+  const task = tasks.value.find(task => task.id === id)
+  if (!task) return
+
+  task.completed = !task.completed
+}
 </script>
 
 <template>
@@ -55,7 +62,13 @@ const onSubmit = () => {
 
       <ul class="task-list" aria-label="Список задач">
         <li v-for="task in tasks" :key="task.id" class="task-item" :class="{ 'task-item--done': task.completed }">
-          <span class="task-status" aria-hidden="true"></span>
+          <button
+            type="button"
+            class="task-status"
+            :aria-pressed="task.completed"
+            :aria-label="task.completed ? `Отметить невыполненной: ${task.title}` : `Отметить выполненной: ${task.title}`"
+            @click="toggleTaskCompleted(task.id)"
+          ></button>
           <span class="task-title">{{ task.title }}</span>
         </li>
       </ul>
