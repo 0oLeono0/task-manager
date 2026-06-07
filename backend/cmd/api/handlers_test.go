@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -170,5 +172,39 @@ func TestCreateTask(t *testing.T) {
 	testTask := task{ID: 1, Title: "test title", Completed: false}
 	if !reflect.DeepEqual(body, testTask) {
 		t.Fatalf("expected %+v, got %+v", testTask, body)
+	}
+}
+
+func TestCreateTask_InvalidPayload(t *testing.T) {
+	app := &application{
+		taskStore: &fakeStore{},
+		logger:    log.New(io.Discard, "", 0),
+	}
+
+	reqBody := strings.NewReader(`"error": "test title", "completed": 67`)
+	req := httptest.NewRequest(http.MethodPost, "/tasks", reqBody)
+	rec := httptest.NewRecorder()
+
+	app.router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected %d, got %d", http.StatusBadRequest, rec.Code)
+	}
+}
+
+func TestCreateTask_EmptyTitle(t *testing.T) {
+	app := &application{
+		taskStore: &fakeStore{},
+		logger:    log.New(io.Discard, "", 0),
+	}
+
+	reqBody := strings.NewReader(`{"completed": false}`)
+	req := httptest.NewRequest(http.MethodPost, "/tasks", reqBody)
+	rec := httptest.NewRecorder()
+
+	app.router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected %d, got %d", http.StatusBadRequest, rec.Code)
 	}
 }
