@@ -78,3 +78,46 @@ func TestPostgresTaskStore_Create(t *testing.T) {
 		t.Fatalf("expected completed %v, got %v", created.Completed, found.Completed)
 	}
 }
+
+func TestPostgresTaskStore_GetTasks(t *testing.T) {
+	store := connectToDB(t)
+	created1, err := store.createTask("test title 1", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	created2, err := store.createTask("test title 2", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tasks, err := store.getTasks()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(tasks) != 2 {
+		t.Fatalf("expected 2 tasks, got %d", len(tasks))
+	}
+
+	if tasks[0].ID != created1.ID {
+		t.Fatalf("expected id %d, got %d", created1.ID, tasks[0].ID)
+	}
+	if tasks[1].ID != created2.ID {
+		t.Fatalf("expected id %d, got %d", created2.ID, tasks[1].ID)
+	}
+
+	if tasks[0].Title != created1.Title {
+		t.Fatalf("expected Title %s, got %s", created1.Title, tasks[0].Title)
+	}
+	if tasks[1].Title != created2.Title {
+		t.Fatalf("expected Title %s, got %s", created2.Title, tasks[1].Title)
+	}
+
+	if tasks[0].Completed != created1.Completed {
+		t.Fatalf("expected Completed %t, got %t", created1.Completed, tasks[0].Completed)
+	}
+	if tasks[1].Completed != created2.Completed {
+		t.Fatalf("expected Completed %t, got %t", created2.Completed, tasks[1].Completed)
+	}
+}
