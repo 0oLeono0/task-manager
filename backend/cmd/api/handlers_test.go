@@ -17,7 +17,12 @@ func (p *fakeStore) getTasks() ([]task, error) {
 }
 
 func (p *fakeStore) getTaskByID(id int) (task, error) {
-	return task{}, nil
+	for _, task := range p.tasks {
+		if task.ID == id {
+			return task, nil
+		}
+	}
+	return task{}, errTaskNotFound
 }
 
 func (p *fakeStore) createTask(title string, completed bool) (task, error) {
@@ -82,5 +87,53 @@ func TestGetTasks(t *testing.T) {
 	}
 	if !reflect.DeepEqual(body, testTasks) {
 		t.Fatalf("expected %+v, got %+v", testTasks, body)
+	}
+}
+
+func TestGetTaskByID(t *testing.T) {
+	tsk := task{ID: 1, Title: "test title 1", Completed: false}
+	app := &application{
+		taskStore: &fakeStore{
+			tasks: []task{tsk},
+		},
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/tasks/1", nil)
+	rec := httptest.NewRecorder()
+
+	app.router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected %d, got %d", http.StatusOK, rec.Code)
+	}
+
+	contentType := rec.Header().Get("Content-Type")
+	if contentType != "application/json" {
+		t.Fatalf("expected %s, got %s", "application/json", contentType)
+	}
+
+	var body task
+	err := json.NewDecoder(rec.Body).Decode(&body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(body, tsk) {
+		t.Fatalf("expected %+v, got %+v", tsk, body)
+	}
+}
+
+func TestGetTaskByID_NotFound(t *testing.T) {
+	app := &application{
+		taskStore: &fakeStore{},
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/tasks/999", nil)
+	rec := httptest.NewRecorder()
+
+	app.router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected %d, got %d", http.StatusNotFound, rec.Code)
 	}
 }
