@@ -342,3 +342,33 @@ func TestDeleteTask(t *testing.T) {
 		t.Fatalf("expected %d, got %d", 0, len(testStore.tasks))
 	}
 }
+
+func TestDeleteTask_InvalidURL(t *testing.T) {
+	app := &application{
+		taskStore: &fakeStore{},
+	}
+
+	req := httptest.NewRequest(http.MethodDelete, "/tasks/abc", nil)
+	rec := httptest.NewRecorder()
+
+	app.router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected %d, got %d", http.StatusBadRequest, rec.Code)
+	}
+}
+
+func TestDeleteTask_NotFound(t *testing.T) {
+	app := &application{
+		taskStore: &fakeStore{},
+	}
+
+	req := httptest.NewRequest(http.MethodDelete, "/tasks/999", nil)
+	rec := httptest.NewRecorder()
+
+	app.router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected %d, got %d", http.StatusNotFound, rec.Code)
+	}
+}
