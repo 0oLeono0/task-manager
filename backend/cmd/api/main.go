@@ -11,9 +11,9 @@ import (
 )
 
 type application struct {
-	logger        *log.Logger
-	cfg           config
-	postgresStore *postgresTaskStore
+	logger    *log.Logger
+	cfg       config
+	taskStore taskStore
 }
 
 type config struct {
@@ -57,7 +57,7 @@ func main() {
 	app := &application{
 		logger: logger,
 		cfg:    cfg,
-		postgresStore: &postgresTaskStore{
+		taskStore: &postgresTaskStore{
 			db: db,
 		},
 	}
