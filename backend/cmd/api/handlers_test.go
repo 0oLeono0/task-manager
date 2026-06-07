@@ -59,6 +59,15 @@ func (p *fakeStore) deleteTask(id int) error {
 	return errTaskNotFound
 }
 
+func checkContentType(t *testing.T, r *httptest.ResponseRecorder) {
+	t.Helper()
+
+	contentType := r.Header().Get("Content-Type")
+	if contentType != "application/json" {
+		t.Fatalf("expected %s, got %s", "application/json", contentType)
+	}
+}
+
 func TestHealthHandler(t *testing.T) {
 	app := &application{}
 
@@ -97,10 +106,7 @@ func TestGetTasks(t *testing.T) {
 		t.Fatalf("expected %d, got %d", http.StatusOK, rec.Code)
 	}
 
-	contentType := rec.Header().Get("Content-Type")
-	if contentType != "application/json" {
-		t.Fatalf("expected %s, got %s", "application/json", contentType)
-	}
+	checkContentType(t, rec)
 
 	var body []task
 	err := json.NewDecoder(rec.Body).Decode(&body)
@@ -129,10 +135,7 @@ func TestGetTaskByID(t *testing.T) {
 		t.Fatalf("expected %d, got %d", http.StatusOK, rec.Code)
 	}
 
-	contentType := rec.Header().Get("Content-Type")
-	if contentType != "application/json" {
-		t.Fatalf("expected %s, got %s", "application/json", contentType)
-	}
+	checkContentType(t, rec)
 
 	var body task
 	err := json.NewDecoder(rec.Body).Decode(&body)
@@ -175,10 +178,7 @@ func TestCreateTask(t *testing.T) {
 		t.Fatalf("expected %d, got %d", http.StatusCreated, rec.Code)
 	}
 
-	contentType := rec.Header().Get("Content-Type")
-	if contentType != "application/json" {
-		t.Fatalf("expected %s, got %s", "application/json", contentType)
-	}
+	checkContentType(t, rec)
 
 	var body task
 	err := json.NewDecoder(rec.Body).Decode(&body)
@@ -243,10 +243,7 @@ func TestUpdateTask(t *testing.T) {
 		t.Fatalf("expected %d, got %d", http.StatusOK, rec.Code)
 	}
 
-	contentType := rec.Header().Get("Content-Type")
-	if contentType != "application/json" {
-		t.Fatalf("expected %s, got %s", "application/json", contentType)
-	}
+	checkContentType(t, rec)
 
 	var body task
 	err := json.NewDecoder(rec.Body).Decode(&body)
