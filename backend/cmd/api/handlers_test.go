@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -26,7 +27,9 @@ func (p *fakeStore) getTaskByID(id int) (task, error) {
 }
 
 func (p *fakeStore) createTask(title string, completed bool) (task, error) {
-	return task{}, nil
+	task := task{ID: len(p.tasks) + 1, Title: title, Completed: completed}
+	p.tasks = append(p.tasks, task)
+	return task, nil
 }
 
 func (p *fakeStore) updateTask(id int, title *string, completed *bool) (task, error) {
@@ -135,5 +138,37 @@ func TestGetTaskByID_NotFound(t *testing.T) {
 
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("expected %d, got %d", http.StatusNotFound, rec.Code)
+	}
+}
+
+func TestCreateTask(t *testing.T) {
+	app := &application{
+		taskStore: &fakeStore{},
+	}
+
+	reqBody := strings.NewReader(`{"title": "test title", "completed": false}`)
+	req := httptest.NewRequest(http.MethodPost, "/tasks", reqBody)
+	rec := httptest.NewRecorder()
+
+	app.router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected %d, got %d", http.StatusCreated, rec.Code)
+	}
+
+	contentType := rec.Header().Get("Content-Type")
+	if contentType != "application/json" {
+		t.Fatalf("expected %s, got %s", "application/json", contentType)
+	}
+
+	var body task
+	err := json.NewDecoder(rec.Body).Decode(&body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testTask := task{ID: 1, Title: "test title", Completed: false}
+	if !reflect.DeepEqual(body, testTask) {
+		t.Fatalf("expected %+v, got %+v", testTask, body)
 	}
 }
