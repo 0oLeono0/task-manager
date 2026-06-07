@@ -35,7 +35,18 @@ func (p *fakeStore) createTask(title string, completed bool) (task, error) {
 }
 
 func (p *fakeStore) updateTask(id int, title *string, completed *bool) (task, error) {
-	return task{}, nil
+	for i, task := range p.tasks {
+		if task.ID == id {
+			if title != nil {
+				p.tasks[i].Title = *title
+			}
+			if completed != nil {
+				p.tasks[i].Completed = *completed
+			}
+			return p.tasks[i], nil
+		}
+	}
+	return task{}, errTaskNotFound
 }
 
 func (p *fakeStore) deleteTask(id int) error {
@@ -206,5 +217,41 @@ func TestCreateTask_EmptyTitle(t *testing.T) {
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("expected %d, got %d", http.StatusBadRequest, rec.Code)
+	}
+}
+
+func TestUpdateTask(t *testing.T) {
+	app := &application{
+		taskStore: &fakeStore{
+			tasks: []task{{ID: 1, Title: "test title", Completed: false}},
+		},
+	}
+
+	reqBody := strings.NewReader(`{"title": "new title"}`)
+	req := httptest.NewRequest(http.MethodPatch, "/tasks/1", reqBody)
+	rec := httptest.NewRecorder()
+
+	app.router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected %d, got %d", http.StatusOK, rec.Code)
+	}
+
+	contentType := rec.Header().Get("Content-Type")
+	if contentType != "application/json" {
+		t.Fatalf("expected %s, got %s", "application/json", contentType)
+	}
+
+	var body task
+	err := json.NewDecoder(rec.Body).Decode(&body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if body.Title != "new title" {
+		t.Fatalf("expected %s, got %s", "new title", body.Title)
+	}
+	if body.Completed != false {
+		t.Fatalf("expected %t, got %t", false, body.Completed)
 	}
 }
