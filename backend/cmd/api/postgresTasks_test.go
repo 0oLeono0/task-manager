@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"os"
 	"testing"
 
@@ -163,5 +164,35 @@ func TestPostgresTaskStore_UpdateTask(t *testing.T) {
 
 	if found.Title != updated.Title || found.Completed != updated.Completed {
 		t.Fatalf("expected %+v, got %+v", updated, found)
+	}
+}
+
+func TestPostgresTaskStore_DeleteTask(t *testing.T) {
+	store := connectToDB(t)
+
+	created, err := store.createTask("test title", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = store.deleteTask(created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = store.getTaskByID(created.ID)
+	if err == nil {
+		t.Fatalf("task %d is not deleted", created.ID)
+	}
+	if !errors.Is(err, errTaskNotFound) {
+		t.Fatalf("expected error %q, got %q", errTaskNotFound, err)
+	}
+
+	err = store.deleteTask(999)
+	if err == nil {
+		t.Fatalf("task %d is found", 999)
+	}
+	if !errors.Is(err, errTaskNotFound) {
+		t.Fatalf("expected error %q, got %q", errTaskNotFound, err)
 	}
 }
