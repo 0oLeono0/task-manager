@@ -21,11 +21,19 @@ type config struct {
 	dsn        string
 }
 
+func getEnvOrFallbackHelper(envName, def string) string {
+	env := os.Getenv(envName)
+	if env != "" {
+		return env
+	}
+	return def
+}
+
 func main() {
 	var cfg config
 	logger := log.Default()
-	flag.StringVar(&cfg.serverAddr, "addr", ":8080", "HTTP server address")
-	flag.StringVar(&cfg.dsn, "db-dsn", os.Getenv("DATABASE_DSN"), "DSN")
+	flag.StringVar(&cfg.serverAddr, "addr", getEnvOrFallbackHelper("SERVER_ADDR", ":8080"), "HTTP server address")
+	flag.StringVar(&cfg.dsn, "db-dsn", getEnvOrFallbackHelper("DATABASE_DSN", ""), "DSN")
 
 	flag.Parse()
 	if cfg.dsn == "" {
