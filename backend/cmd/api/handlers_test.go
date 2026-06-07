@@ -255,3 +255,56 @@ func TestUpdateTask(t *testing.T) {
 		t.Fatalf("expected %t, got %t", false, body.Completed)
 	}
 }
+
+func TestUpdateTask_InvalidURL(t *testing.T) {
+	app := &application{
+		taskStore: &fakeStore{},
+		logger:    log.New(io.Discard, "", 0),
+	}
+
+	reqBody := strings.NewReader(`{"title": "new title"}`)
+	req := httptest.NewRequest(http.MethodPatch, "/tasks/abc", reqBody)
+	rec := httptest.NewRecorder()
+
+	app.router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected %d, got %d", http.StatusBadRequest, rec.Code)
+	}
+}
+
+func TestUpdateTask_InvalidPayload(t *testing.T) {
+	app := &application{
+		taskStore: &fakeStore{
+			tasks: []task{{ID: 1, Title: "test title", Completed: false}},
+		},
+		logger: log.New(io.Discard, "", 0),
+	}
+
+	reqBody := strings.NewReader(`{error 67}`)
+	req := httptest.NewRequest(http.MethodPatch, "/tasks/1", reqBody)
+	rec := httptest.NewRecorder()
+
+	app.router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected %d, got %d", http.StatusBadRequest, rec.Code)
+	}
+}
+
+func TestUpdateTask_NotFound(t *testing.T) {
+	app := &application{
+		taskStore: &fakeStore{},
+		logger:    log.New(io.Discard, "", 0),
+	}
+
+	reqBody := strings.NewReader(`{"title": "new title"}`)
+	req := httptest.NewRequest(http.MethodPatch, "/tasks/999", reqBody)
+	rec := httptest.NewRecorder()
+
+	app.router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected %d, got %d", http.StatusNotFound, rec.Code)
+	}
+}
