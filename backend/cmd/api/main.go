@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -24,7 +25,7 @@ func main() {
 	var cfg config
 	logger := log.Default()
 	flag.StringVar(&cfg.serverAddr, "addr", ":8080", "HTTP server address")
-	flag.StringVar(&cfg.dsn, "db-dsn", "", "DSN")
+	flag.StringVar(&cfg.dsn, "db-dsn", os.Getenv("DATABASE_DSN"), "DSN")
 
 	flag.Parse()
 	if cfg.dsn == "" {
