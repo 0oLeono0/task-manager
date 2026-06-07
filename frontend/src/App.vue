@@ -54,7 +54,7 @@ const toggleTaskCompleted = (id: number) => {
 
       <form class="task-form" @submit.prevent="onSubmit">
         <label class="sr-only" for="task-title">Новая задача</label>
-        <input v-model="input" id="task-title" type="text" placeholder="Например: проверить API" />
+        <input id="task-title" v-model="input" type="text" placeholder="Например: проверить API" />
         <button type="submit">Добавить</button>
       </form>
 
