@@ -1,31 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
+import { getTasks, type Task } from './api'
 
-interface Task {
-  id: number
-  title: string
-  completed: boolean
-}
-
-const tasks = ref<Task[]>([
-  {
-    id: 1,
-    title: 'Подключить PostgreSQL',
-    completed: true,
-  },
-  {
-    id: 2,
-    title: 'Собрать frontend shell',
-    completed: false,
-  },
-  {
-    id: 3,
-    title: 'Подготовить загрузку задач из API',
-    completed: false,
-  },
-])
+const tasks = ref<Task[]>([])
 
 const input = ref('')
+
+onMounted(async () => {
+  const fetchedTasks = await getTasks()
+  tasks.value = fetchedTasks
+})
 
 const onSubmit = () => {
   const trimmedTitle = input.value.trim()
