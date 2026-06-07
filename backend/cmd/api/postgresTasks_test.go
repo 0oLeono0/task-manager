@@ -196,3 +196,27 @@ func TestPostgresTaskStore_DeleteTask(t *testing.T) {
 		t.Fatalf("expected error %q, got %q", errTaskNotFound, err)
 	}
 }
+
+func TestPostgresTaskStore_GetTaskByID_NotFound(t *testing.T) {
+	store := connectToDB(t)
+
+	_, err := store.getTaskByID(999)
+	if err == nil {
+		t.Fatalf("task %d is found", 999)
+	}
+	if !errors.Is(err, errTaskNotFound) {
+		t.Fatalf("expected error %q, got %q", errTaskNotFound, err)
+	}
+}
+
+func TestPostgresTaskStore_UpdateTask_NotFound(t *testing.T) {
+	store := connectToDB(t)
+
+	_, err := store.updateTask(999, nil, nil)
+	if err == nil {
+		t.Fatalf("task %d is found", 999)
+	}
+	if !errors.Is(err, errTaskNotFound) {
+		t.Fatalf("expected error %q, got %q", errTaskNotFound, err)
+	}
+}
