@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -40,7 +39,7 @@ func (app *application) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	foundTask, err := app.postgresStore.getTaskByID(id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, errTaskNotFound) {
 			app.errorJSON(w, http.StatusNotFound, "task not found")
 			return
 		}
@@ -100,7 +99,7 @@ func (app *application) updateTaskHandler(w http.ResponseWriter, r *http.Request
 
 	updatedTask, err := app.postgresStore.updateTask(id, inputTask.Title, inputTask.Completed)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, errTaskNotFound) {
 			app.errorJSON(w, http.StatusNotFound, "task not found")
 			return
 		}
@@ -125,7 +124,7 @@ func (app *application) deleteTaskHandler(w http.ResponseWriter, r *http.Request
 
 	err = app.postgresStore.deleteTask(id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, errTaskNotFound) {
 			app.errorJSON(w, http.StatusNotFound, "task not found")
 			return
 		}

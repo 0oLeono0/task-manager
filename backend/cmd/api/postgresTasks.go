@@ -1,6 +1,9 @@
 package main
 
-import "database/sql"
+import (
+	"database/sql"
+	"errors"
+)
 
 type postgresTaskStore struct {
 	db *sql.DB
@@ -39,6 +42,9 @@ func (p *postgresTaskStore) getTaskByID(id int) (task, error) {
 
 	err := row.Scan(&task.ID, &task.Title, &task.Completed)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return task, errTaskNotFound
+		}
 		return task, err
 	}
 	return task, nil
@@ -94,7 +100,7 @@ func (p *postgresTaskStore) deleteTask(id int) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return sql.ErrNoRows
+		return errTaskNotFound
 	}
 	return nil
 }
