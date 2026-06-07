@@ -47,6 +47,17 @@ func connectToDB(t *testing.T) *postgresTaskStore {
 	return store
 }
 
+func expectNotFoundError(t *testing.T, err error) {
+	t.Helper()
+
+	if err == nil {
+		t.Fatalf("expected %q, got nil", errTaskNotFound)
+	}
+	if !errors.Is(err, errTaskNotFound) {
+		t.Fatalf("expected %q, got %q", errTaskNotFound, err)
+	}
+}
+
 func TestPostgresTaskStore_Create(t *testing.T) {
 	store := connectToDB(t)
 
@@ -181,42 +192,22 @@ func TestPostgresTaskStore_DeleteTask(t *testing.T) {
 	}
 
 	_, err = store.getTaskByID(created.ID)
-	if err == nil {
-		t.Fatalf("task %d is not deleted", created.ID)
-	}
-	if !errors.Is(err, errTaskNotFound) {
-		t.Fatalf("expected error %q, got %q", errTaskNotFound, err)
-	}
+	expectNotFoundError(t, err)
 
 	err = store.deleteTask(999)
-	if err == nil {
-		t.Fatalf("task %d is found", 999)
-	}
-	if !errors.Is(err, errTaskNotFound) {
-		t.Fatalf("expected error %q, got %q", errTaskNotFound, err)
-	}
+	expectNotFoundError(t, err)
 }
 
 func TestPostgresTaskStore_GetTaskByID_NotFound(t *testing.T) {
 	store := connectToDB(t)
 
 	_, err := store.getTaskByID(999)
-	if err == nil {
-		t.Fatalf("task %d is found", 999)
-	}
-	if !errors.Is(err, errTaskNotFound) {
-		t.Fatalf("expected error %q, got %q", errTaskNotFound, err)
-	}
+	expectNotFoundError(t, err)
 }
 
 func TestPostgresTaskStore_UpdateTask_NotFound(t *testing.T) {
 	store := connectToDB(t)
 
 	_, err := store.updateTask(999, nil, nil)
-	if err == nil {
-		t.Fatalf("task %d is found", 999)
-	}
-	if !errors.Is(err, errTaskNotFound) {
-		t.Fatalf("expected error %q, got %q", errTaskNotFound, err)
-	}
+	expectNotFoundError(t, err)
 }
