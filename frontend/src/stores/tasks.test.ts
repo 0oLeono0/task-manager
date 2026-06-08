@@ -110,4 +110,20 @@ describe('tasks store', () => {
     expect(store.updatingTaskId).toBeNull()
     expect(store.actionErrText).toBe('')
   })
+
+  it('keeps task unchanged and stores action error when toggle fails', async () => {
+    const store = useTasksStore()
+    const task: Task = { id: 1, title: 'Check tasks API', completed: false }
+
+    store.tasks = [task]
+    vi.mocked(updateTask).mockRejectedValue(new Error('network error'))
+
+    await store.toggleTaskCompleted(task.id)
+
+    expect(updateTask).toHaveBeenCalledTimes(1)
+    expect(updateTask).toHaveBeenCalledWith(task.id, { completed: true })
+    expect(store.tasks).toEqual([task])
+    expect(store.updatingTaskId).toBeNull()
+    expect(store.actionErrText).not.toBe('')
+  })
 })
