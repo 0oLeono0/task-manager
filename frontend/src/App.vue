@@ -6,6 +6,7 @@ const tasks = ref<Task[]>([])
 const input = ref('')
 const isLoading = ref(true)
 const isCreating = ref(false)
+const updatingTaskId = ref<number | null>(null)
 const errText = ref('')
 const formErrText = ref('')
 const actionErrText = ref('')
@@ -42,10 +43,13 @@ const onSubmit = async () => {
 }
 
 const toggleTaskCompleted = async (id: number) => {
+  if (updatingTaskId.value !== null) return
+
   const task = tasks.value.find((task) => task.id === id)
   if (!task) return
 
   actionErrText.value = ''
+  updatingTaskId.value = id
 
   try {
     const updatedTask = await updateTask(id, { completed: !task.completed })
@@ -55,6 +59,8 @@ const toggleTaskCompleted = async (id: number) => {
     tasks.value[taskIndex] = updatedTask
   } catch {
     actionErrText.value = 'Не удалось обновить задачу. Попробуйте еще раз.'
+  } finally {
+    updatingTaskId.value = null
   }
 }
 
@@ -104,6 +110,7 @@ const deleteTaskById = async (id: number) => {
               type="button"
               class="task-status"
               :aria-pressed="task.completed"
+              :disabled="updatingTaskId !== null"
               :aria-label="
                 task.completed
                   ? `Отметить невыполненной: ${task.title}`

@@ -175,6 +175,15 @@ h1 {
   border-color: #315fbd;
 }
 
+.task-status:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.task-status:disabled::before {
+  border-color: #8b98ad;
+}
+
 .task-status:focus-visible {
   outline: 3px solid rgba(49, 95, 189, 0.24);
   outline-offset: 3px;
