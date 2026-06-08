@@ -7,6 +7,7 @@ const input = ref('')
 const isLoading = ref(true)
 const isCreating = ref(false)
 const updatingTaskId = ref<number | null>(null)
+const deletingTaskId = ref<number | null>(null)
 const errText = ref('')
 const formErrText = ref('')
 const actionErrText = ref('')
@@ -65,13 +66,18 @@ const toggleTaskCompleted = async (id: number) => {
 }
 
 const deleteTaskById = async (id: number) => {
+  if (deletingTaskId.value !== null) return
+
   actionErrText.value = ''
+  deletingTaskId.value = id
 
   try {
     await deleteTask(id)
     tasks.value = tasks.value.filter((task) => task.id !== id)
   } catch {
     actionErrText.value = 'Не удалось удалить задачу. Попробуйте еще раз.'
+  } finally {
+    deletingTaskId.value = null
   }
 }
 </script>
@@ -122,6 +128,7 @@ const deleteTaskById = async (id: number) => {
             <button
               type="button"
               class="task-delete"
+              :disabled="deletingTaskId !== null"
               :aria-label="`Удалить задачу: ${task.title}`"
               @click="deleteTaskById(task.id)"
             >

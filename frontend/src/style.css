@@ -221,6 +221,13 @@ h1 {
   background: #ffe3e3;
 }
 
+.task-delete:disabled {
+  color: #687386;
+  background: #eef0f4;
+  border-color: #d9dee8;
+  cursor: wait;
+}
+
 .task-delete:focus-visible {
   outline: 3px solid rgba(140, 47, 47, 0.22);
   outline-offset: 2px;
