@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { createTask, getTasks, updateTask, type Task } from './api'
+import { createTask, deleteTask, getTasks, updateTask, type Task } from './api'
 
 const tasks = ref<Task[]>([])
 const input = ref('')
@@ -51,6 +51,17 @@ const toggleTaskCompleted = async (id: number) => {
     actionErrText.value = 'Не удалось обновить задачу. Попробуйте еще раз.'
   }
 }
+
+const deleteTaskById = async (id: number) => {
+  actionErrText.value = ''
+
+  try {
+    await deleteTask(id)
+    tasks.value = tasks.value.filter((task) => task.id !== id)
+  } catch {
+    actionErrText.value = 'Не удалось удалить задачу. Попробуйте еще раз.'
+  }
+}
 </script>
 
 <template>
@@ -93,6 +104,14 @@ const toggleTaskCompleted = async (id: number) => {
               @click="toggleTaskCompleted(task.id)"
             ></button>
             <span class="task-title">{{ task.title }}</span>
+            <button
+              type="button"
+              class="task-delete"
+              :aria-label="`Удалить задачу: ${task.title}`"
+              @click="deleteTaskById(task.id)"
+            >
+              Удалить
+            </button>
           </li>
         </ul>
       </template>

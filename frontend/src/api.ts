@@ -33,3 +33,7 @@ export const updateTask = async (id: number, input: UpdateTaskInput): Promise<Ta
   const { data } = await apiClient.patch<Task>(`/tasks/${id}`, input)
   return data
 }
+
+export const deleteTask = async (id: number): Promise<void> => {
+  await apiClient.delete(`/tasks/${id}`)
+}
