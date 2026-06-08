@@ -78,4 +78,19 @@ describe('tasks store', () => {
     expect(store.isCreating).toBe(false)
     expect(store.formErrText).toBe('')
   })
+
+  it('keeps input and stores form error when task creation fails', async () => {
+    const store = useTasksStore()
+
+    store.input = 'Write frontend tests'
+    vi.mocked(createTask).mockRejectedValue(new Error('network error'))
+
+    await store.createTask()
+
+    expect(createTask).toHaveBeenCalledTimes(1)
+    expect(store.tasks).toEqual([])
+    expect(store.input).toBe('Write frontend tests')
+    expect(store.isCreating).toBe(false)
+    expect(store.formErrText).not.toBe('')
+  })
 })
