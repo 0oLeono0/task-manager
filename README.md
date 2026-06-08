@@ -1,0 +1,109 @@
+# Task Manager
+
+fullstack task manager с backend на Go,
+хранением данных в PostgreSQL и frontend на Vue.
+
+## Стек
+
+- Backend: Go, chi, PostgreSQL
+- База данных и dev-инфраструктура: Docker Compose
+- Frontend: Vue 3, TypeScript, Vite, Pinia, Axios
+
+## Текущие возможности
+
+- CRUD API для задач: список, детали, создание, обновление, удаление
+- Хранение задач в PostgreSQL
+- Frontend-список задач с созданием, переключением completed и удалением
+- UI-состояния загрузки, ошибки и пустого списка
+
+## Переменные окружения
+
+Перед запуском базы данных и backend создай локальный `.env` из примера:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+`.env.example` хранится в репозитории. `.env` локальный и должен содержать реальные
+значения.
+
+Важные переменные:
+
+- `DATABASE_DSN`: строка подключения backend к базе данных
+- `TEST_DATABASE_DSN`: строка подключения для backend integration tests
+- `SERVER_ADDR`: адрес backend-сервера, по умолчанию `:8080`
+
+Пример формата DSN:
+
+```text
+postgres://task_manager_user:task_manager_password@localhost:5432/task_manager?sslmode=disable
+```
+
+Для `TEST_DATABASE_DSN` лучше использовать отдельную тестовую базу, чтобы тесты
+случайно не трогали development database.
+
+## Запуск
+
+Запустить PostgreSQL:
+
+```powershell
+docker compose up -d postgres
+```
+
+Применить текущую миграцию:
+
+```powershell
+psql $env:DATABASE_DSN -f backend/migrations/000001_create_tasks_table.up.sql
+```
+
+Для этой команды нужен установленный PostgreSQL client / `psql`.
+
+Запустить backend:
+
+```powershell
+cd backend
+go run ./cmd/api
+```
+
+Запустить frontend:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+В dev-режиме Vite проксирует запросы `/api/*` на Go backend.
+
+## Проверки
+
+Backend tests:
+
+```powershell
+cd backend
+go test ./...
+```
+
+PostgreSQL integration tests используют `TEST_DATABASE_DSN`. Если переменная не
+задана, эти тесты будут пропущены.
+
+Frontend lint:
+
+```powershell
+cd frontend
+npm run lint
+```
+
+Проверка форматирования frontend:
+
+```powershell
+cd frontend
+npm run format:check
+```
+
+Production build frontend:
+
+```powershell
+cd frontend
+npm run build
+```
