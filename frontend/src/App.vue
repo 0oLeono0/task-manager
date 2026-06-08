@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { useTasks } from './composables/useTasks'
+import { onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useTasksStore } from './stores/tasks'
 
+const tasksStore = useTasksStore()
 const {
   tasks,
   input,
@@ -11,10 +14,11 @@ const {
   errText,
   formErrText,
   actionErrText,
-  onSubmit,
-  toggleTaskCompleted,
-  deleteTaskById,
-} = useTasks()
+} = storeToRefs(tasksStore)
+
+const { loadTasks, createTask: onSubmit, toggleTaskCompleted, deleteTaskById } = tasksStore
+
+onMounted(loadTasks)
 </script>
 
 <template>
