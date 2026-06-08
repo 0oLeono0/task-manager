@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { createTask, getTasks, type Task } from './api'
+import { createTask, getTasks, updateTask, type Task } from './api'
 
 const tasks = ref<Task[]>([])
 const input = ref('')
 const isLoading = ref(true)
 const errText = ref('')
 const formErrText = ref('')
+const actionErrText = ref('')
 
 onMounted(async () => {
   try {
@@ -34,11 +35,21 @@ const onSubmit = async () => {
   }
 }
 
-const toggleTaskCompleted = (id: number) => {
+const toggleTaskCompleted = async (id: number) => {
   const task = tasks.value.find((task) => task.id === id)
   if (!task) return
 
-  task.completed = !task.completed
+  actionErrText.value = ''
+
+  try {
+    const updatedTask = await updateTask(id, { completed: !task.completed })
+    const taskIndex = tasks.value.indexOf(task)
+    if (taskIndex === -1) return
+
+    tasks.value[taskIndex] = updatedTask
+  } catch {
+    actionErrText.value = 'Не удалось обновить задачу. Попробуйте еще раз.'
+  }
 }
 </script>
 
@@ -60,27 +71,31 @@ const toggleTaskCompleted = (id: number) => {
       <p v-if="isLoading" class="task-message">Загружаем задачи...</p>
       <p v-else-if="errText" class="task-message task-message--error">{{ errText }}</p>
 
-      <ul v-else class="task-list" aria-label="Список задач">
-        <li
-          v-for="task in tasks"
-          :key="task.id"
-          class="task-item"
-          :class="{ 'task-item--done': task.completed }"
-        >
-          <button
-            type="button"
-            class="task-status"
-            :aria-pressed="task.completed"
-            :aria-label="
-              task.completed
-                ? `Отметить невыполненной: ${task.title}`
-                : `Отметить выполненной: ${task.title}`
-            "
-            @click="toggleTaskCompleted(task.id)"
-          ></button>
-          <span class="task-title">{{ task.title }}</span>
-        </li>
-      </ul>
+      <template v-else>
+        <p v-if="actionErrText" class="task-message task-message--error">{{ actionErrText }}</p>
+
+        <ul class="task-list" aria-label="Список задач">
+          <li
+            v-for="task in tasks"
+            :key="task.id"
+            class="task-item"
+            :class="{ 'task-item--done': task.completed }"
+          >
+            <button
+              type="button"
+              class="task-status"
+              :aria-pressed="task.completed"
+              :aria-label="
+                task.completed
+                  ? `Отметить невыполненной: ${task.title}`
+                  : `Отметить выполненной: ${task.title}`
+              "
+              @click="toggleTaskCompleted(task.id)"
+            ></button>
+            <span class="task-title">{{ task.title }}</span>
+          </li>
+        </ul>
+      </template>
     </section>
   </main>
 </template>
