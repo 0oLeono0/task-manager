@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { getTasks, type Task } from '../api'
+import { createTask, getTasks, type Task } from '../api'
 import { useTasksStore } from './tasks'
 
 vi.mock('../api', () => ({
@@ -60,5 +60,22 @@ describe('tasks store', () => {
     expect(store.tasks).toEqual([])
     expect(store.isLoading).toBe(false)
     expect(store.errText).not.toBe('')
+  })
+
+  it('creates a task successfully', async () => {
+    const store = useTasksStore()
+    const createdTask: Task = { id: 1, title: 'Write frontend tests', completed: false }
+
+    store.input = '  Write frontend tests  '
+    vi.mocked(createTask).mockResolvedValue(createdTask)
+
+    await store.createTask()
+
+    expect(createTask).toHaveBeenCalledTimes(1)
+    expect(createTask).toHaveBeenCalledWith({ title: 'Write frontend tests' })
+    expect(store.tasks).toEqual([createdTask])
+    expect(store.input).toBe('')
+    expect(store.isCreating).toBe(false)
+    expect(store.formErrText).toBe('')
   })
 })
