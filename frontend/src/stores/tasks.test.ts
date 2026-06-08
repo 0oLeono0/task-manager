@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { createTask, getTasks, updateTask, type Task } from '../api'
+import { createTask, deleteTask, getTasks, updateTask, type Task } from '../api'
 import { useTasksStore } from './tasks'
 
 vi.mock('../api', () => ({
@@ -125,5 +125,22 @@ describe('tasks store', () => {
     expect(store.tasks).toEqual([task])
     expect(store.updatingTaskId).toBeNull()
     expect(store.actionErrText).not.toBe('')
+  })
+
+  it('deletes a task successfully', async () => {
+    const store = useTasksStore()
+    const firstTask: Task = { id: 1, title: 'Prepare README', completed: true }
+    const secondTask: Task = { id: 2, title: 'Check tasks API', completed: false }
+
+    store.tasks = [firstTask, secondTask]
+    vi.mocked(deleteTask).mockResolvedValue()
+
+    await store.deleteTaskById(firstTask.id)
+
+    expect(deleteTask).toHaveBeenCalledTimes(1)
+    expect(deleteTask).toHaveBeenCalledWith(firstTask.id)
+    expect(store.tasks).toEqual([secondTask])
+    expect(store.deletingTaskId).toBeNull()
+    expect(store.actionErrText).toBe('')
   })
 })
