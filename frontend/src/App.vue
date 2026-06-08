@@ -85,7 +85,9 @@ const deleteTaskById = async (id: number) => {
       <template v-else>
         <p v-if="actionErrText" class="task-message task-message--error">{{ actionErrText }}</p>
 
-        <ul class="task-list" aria-label="Список задач">
+        <p v-if="tasks.length === 0" class="task-message">Задач пока нет</p>
+
+        <ul v-else class="task-list" aria-label="Список задач">
           <li
             v-for="task in tasks"
             :key="task.id"
