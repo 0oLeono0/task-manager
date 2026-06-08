@@ -9,6 +9,13 @@ fullstack task manager с backend на Go,
 - База данных и dev-инфраструктура: Docker Compose
 - Frontend: Vue 3, TypeScript, Vite, Pinia, Axios
 
+## Архитектура
+
+- Frontend отправляет запросы на `/api/*`.
+- Vite proxy проксирует эти запросы на Go backend.
+- Backend обрабатывает REST endpoints.
+- Данные хранятся в PostgreSQL.
+
 ## Текущие возможности
 
 - CRUD API для задач: список, детали, создание, обновление, удаление
