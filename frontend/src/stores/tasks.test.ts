@@ -48,4 +48,17 @@ describe('tasks store', () => {
     expect(store.isLoading).toBe(false)
     expect(store.errText).toBe('')
   })
+
+  it('keeps tasks empty and stores error text when loading fails', async () => {
+    const store = useTasksStore()
+
+    vi.mocked(getTasks).mockRejectedValue(new Error('network error'))
+
+    await store.loadTasks()
+
+    expect(getTasks).toHaveBeenCalledTimes(1)
+    expect(store.tasks).toEqual([])
+    expect(store.isLoading).toBe(false)
+    expect(store.errText).not.toBe('')
+  })
 })
