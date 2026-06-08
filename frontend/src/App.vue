@@ -5,6 +5,7 @@ import { createTask, deleteTask, getTasks, updateTask, type Task } from './api'
 const tasks = ref<Task[]>([])
 const input = ref('')
 const isLoading = ref(true)
+const isCreating = ref(false)
 const errText = ref('')
 const formErrText = ref('')
 const actionErrText = ref('')
@@ -21,10 +22,13 @@ onMounted(async () => {
 })
 
 const onSubmit = async () => {
+  if (isCreating.value) return
+
   const trimmedTitle = input.value.trim()
   if (trimmedTitle === '') return
 
   formErrText.value = ''
+  isCreating.value = true
 
   try {
     const createdTask = await createTask({ title: trimmedTitle })
@@ -32,6 +36,8 @@ const onSubmit = async () => {
     input.value = ''
   } catch {
     formErrText.value = 'Не удалось создать задачу. Попробуйте еще раз.'
+  } finally {
+    isCreating.value = false
   }
 }
 
@@ -75,7 +81,7 @@ const deleteTaskById = async (id: number) => {
       <form class="task-form" @submit.prevent="onSubmit">
         <label class="sr-only" for="task-title">Новая задача</label>
         <input id="task-title" v-model="input" type="text" placeholder="Например: проверить API" />
-        <button type="submit">Добавить</button>
+        <button type="submit" :disabled="isCreating">Добавить</button>
       </form>
       <p v-if="formErrText" class="task-message task-message--error">{{ formErrText }}</p>
 

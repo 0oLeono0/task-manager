@@ -105,6 +105,11 @@ h1 {
   background: #244f9f;
 }
 
+.task-form button:disabled {
+  background: #8b98ad;
+  cursor: not-allowed;
+}
+
 .task-message {
   margin: 0;
   padding: 14px 16px;
