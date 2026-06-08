@@ -143,4 +143,20 @@ describe('tasks store', () => {
     expect(store.deletingTaskId).toBeNull()
     expect(store.actionErrText).toBe('')
   })
+
+  it('keeps task unchanged and stores action error when delete fails', async () => {
+    const store = useTasksStore()
+    const task: Task = { id: 1, title: 'Prepare README', completed: false }
+
+    store.tasks = [task]
+    vi.mocked(deleteTask).mockRejectedValue(new Error('network error'))
+
+    await store.deleteTaskById(task.id)
+
+    expect(deleteTask).toHaveBeenCalledTimes(1)
+    expect(deleteTask).toHaveBeenCalledWith(task.id)
+    expect(store.tasks).toEqual([task])
+    expect(store.deletingTaskId).toBeNull()
+    expect(store.actionErrText).not.toBe('')
+  })
 })
