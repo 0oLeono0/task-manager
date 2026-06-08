@@ -120,6 +120,11 @@ h1 {
   border-color: #efb8b8;
 }
 
+.task-message + .task-message,
+.task-message + .task-list {
+  margin-top: 10px;
+}
+
 .task-list {
   display: grid;
   gap: 10px;

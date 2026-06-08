@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { getTasks, type Task } from './api'
+import { createTask, getTasks, type Task } from './api'
 
 const tasks = ref<Task[]>([])
 const input = ref('')
 const isLoading = ref(true)
 const errText = ref('')
+const formErrText = ref('')
 
 onMounted(async () => {
   try {
@@ -18,13 +19,19 @@ onMounted(async () => {
   }
 })
 
-const onSubmit = () => {
+const onSubmit = async () => {
   const trimmedTitle = input.value.trim()
   if (trimmedTitle === '') return
 
-  const task = { id: tasks.value.length + 1, title: trimmedTitle, completed: false }
-  tasks.value.push(task)
-  input.value = ''
+  formErrText.value = ''
+
+  try {
+    const createdTask = await createTask({ title: trimmedTitle })
+    tasks.value.push(createdTask)
+    input.value = ''
+  } catch {
+    formErrText.value = 'Не удалось создать задачу. Попробуйте еще раз.'
+  }
 }
 
 const toggleTaskCompleted = (id: number) => {
@@ -48,6 +55,7 @@ const toggleTaskCompleted = (id: number) => {
         <input id="task-title" v-model="input" type="text" placeholder="Например: проверить API" />
         <button type="submit">Добавить</button>
       </form>
+      <p v-if="formErrText" class="task-message task-message--error">{{ formErrText }}</p>
 
       <p v-if="isLoading" class="task-message">Загружаем задачи...</p>
       <p v-else-if="errText" class="task-message task-message--error">{{ errText }}</p>
