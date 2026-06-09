@@ -192,6 +192,32 @@ func TestCreateTask(t *testing.T) {
 	}
 }
 
+func TestCreateTask_TrimsTitle(t *testing.T) {
+	app := &application{
+		taskStore: &fakeStore{},
+	}
+
+	reqBody := strings.NewReader(`{"title": "  test title  ", "completed": false}`)
+	req := httptest.NewRequest(http.MethodPost, "/tasks", reqBody)
+	rec := httptest.NewRecorder()
+
+	app.router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected %d, got %d", http.StatusCreated, rec.Code)
+	}
+
+	var body task
+	err := json.NewDecoder(rec.Body).Decode(&body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if body.Title != "test title" {
+		t.Fatalf("expected %s, got %s", "test title", body.Title)
+	}
+}
+
 func TestCreateTask_InvalidPayload(t *testing.T) {
 	app := &application{
 		taskStore: &fakeStore{},
@@ -216,6 +242,23 @@ func TestCreateTask_EmptyTitle(t *testing.T) {
 	}
 
 	reqBody := strings.NewReader(`{"completed": false}`)
+	req := httptest.NewRequest(http.MethodPost, "/tasks", reqBody)
+	rec := httptest.NewRecorder()
+
+	app.router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected %d, got %d", http.StatusBadRequest, rec.Code)
+	}
+}
+
+func TestCreateTask_BlankTitle(t *testing.T) {
+	app := &application{
+		taskStore: &fakeStore{},
+		logger:    log.New(io.Discard, "", 0),
+	}
+
+	reqBody := strings.NewReader(`{"title": "   ", "completed": false}`)
 	req := httptest.NewRequest(http.MethodPost, "/tasks", reqBody)
 	rec := httptest.NewRecorder()
 
@@ -259,6 +302,65 @@ func TestUpdateTask(t *testing.T) {
 	}
 }
 
+func TestUpdateTask_CompletedOnly(t *testing.T) {
+	app := &application{
+		taskStore: &fakeStore{
+			tasks: []task{{ID: 1, Title: "old title", Completed: false}},
+		},
+	}
+
+	reqBody := strings.NewReader(`{"completed": true}`)
+	req := httptest.NewRequest(http.MethodPatch, "/tasks/1", reqBody)
+	rec := httptest.NewRecorder()
+
+	app.router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected %d, got %d", http.StatusOK, rec.Code)
+	}
+
+	var body task
+	err := json.NewDecoder(rec.Body).Decode(&body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if body.Title != "old title" {
+		t.Fatalf("expected %s, got %s", "old title", body.Title)
+	}
+	if body.Completed != true {
+		t.Fatalf("expected %t, got %t", true, body.Completed)
+	}
+}
+
+func TestUpdateTask_TrimsTitle(t *testing.T) {
+	app := &application{
+		taskStore: &fakeStore{
+			tasks: []task{{ID: 1, Title: "test title", Completed: false}},
+		},
+	}
+
+	reqBody := strings.NewReader(`{"title": "  new title  "}`)
+	req := httptest.NewRequest(http.MethodPatch, "/tasks/1", reqBody)
+	rec := httptest.NewRecorder()
+
+	app.router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected %d, got %d", http.StatusOK, rec.Code)
+	}
+
+	var body task
+	err := json.NewDecoder(rec.Body).Decode(&body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if body.Title != "new title" {
+		t.Fatalf("expected %s, got %s", "new title", body.Title)
+	}
+}
+
 func TestUpdateTask_InvalidURL(t *testing.T) {
 	app := &application{
 		taskStore: &fakeStore{},
@@ -285,6 +387,25 @@ func TestUpdateTask_InvalidPayload(t *testing.T) {
 	}
 
 	reqBody := strings.NewReader(`{error 67}`)
+	req := httptest.NewRequest(http.MethodPatch, "/tasks/1", reqBody)
+	rec := httptest.NewRecorder()
+
+	app.router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected %d, got %d", http.StatusBadRequest, rec.Code)
+	}
+}
+
+func TestUpdateTask_BlankTitle(t *testing.T) {
+	app := &application{
+		taskStore: &fakeStore{
+			tasks: []task{{ID: 1, Title: "test title", Completed: false}},
+		},
+		logger: log.New(io.Discard, "", 0),
+	}
+
+	reqBody := strings.NewReader(`{"title": "   "}`)
 	req := httptest.NewRequest(http.MethodPatch, "/tasks/1", reqBody)
 	rec := httptest.NewRecorder()
 

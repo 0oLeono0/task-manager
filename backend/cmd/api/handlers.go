@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -62,12 +63,14 @@ func (app *application) createTaskHandler(w http.ResponseWriter, r *http.Request
 		app.errorJSON(w, http.StatusBadRequest, "invalid task")
 		return
 	}
-	if inputTask.Title == "" {
+
+	title := strings.TrimSpace(inputTask.Title)
+	if title == "" {
 		app.errorJSON(w, http.StatusBadRequest, "title is required")
 		return
 	}
 
-	createdTask, err := app.taskStore.createTask(inputTask.Title, inputTask.Completed)
+	createdTask, err := app.taskStore.createTask(title, inputTask.Completed)
 	if err != nil {
 		app.logger.Println(err)
 		app.errorJSON(w, http.StatusInternalServerError, "server error")
@@ -95,6 +98,16 @@ func (app *application) updateTaskHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		app.errorJSON(w, http.StatusBadRequest, "invalid request")
 		return
+	}
+
+	if inputTask.Title != nil {
+		title := strings.TrimSpace(*inputTask.Title)
+		if title == "" {
+			app.errorJSON(w, http.StatusBadRequest, "title is required")
+			return
+		}
+
+		inputTask.Title = &title
 	}
 
 	updatedTask, err := app.taskStore.updateTask(id, inputTask.Title, inputTask.Completed)
