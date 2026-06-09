@@ -24,5 +24,8 @@ func (app *application) errorJSON(w http.ResponseWriter, status int, message str
 }
 
 func (app *application) readJSON(r *http.Request, dst any) error {
-	return json.NewDecoder(r.Body).Decode(dst)
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	return decoder.Decode(dst)
 }
