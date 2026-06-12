@@ -11,12 +11,22 @@ const {
   isCreating,
   updatingTaskId,
   deletingTaskId,
+  editingTaskId,
+  editingTitle,
   errText,
   formErrText,
   actionErrText,
 } = storeToRefs(tasksStore)
 
-const { loadTasks, createTask: onSubmit, toggleTaskCompleted, deleteTaskById } = tasksStore
+const {
+  loadTasks,
+  createTask: onSubmit,
+  toggleTaskCompleted,
+  deleteTaskById,
+  startEditingTask,
+  cancelEditingTask,
+  updateTaskTitle,
+} = tasksStore
 
 onMounted(loadTasks)
 </script>
@@ -63,11 +73,46 @@ onMounted(loadTasks)
               "
               @click="toggleTaskCompleted(task.id)"
             ></button>
-            <span class="task-title">{{ task.title }}</span>
+            <input
+              v-if="editingTaskId === task.id"
+              v-model="editingTitle"
+              class="task-title-input"
+              type="text"
+              :aria-label="`Редактировать задачу: ${task.title}`"
+            />
+            <span v-else class="task-title">{{ task.title }}</span>
+            <button
+              v-if="editingTaskId === task.id"
+              type="button"
+              class="task-save"
+              :disabled="updatingTaskId !== null"
+              @click="updateTaskTitle"
+            >
+              Сохранить
+            </button>
+            <button
+              v-if="editingTaskId === task.id"
+              type="button"
+              class="task-edit"
+              :disabled="updatingTaskId !== null"
+              @click="cancelEditingTask"
+            >
+              Отмена
+            </button>
+            <button
+              v-else
+              type="button"
+              class="task-edit"
+              :disabled="updatingTaskId !== null"
+              :aria-label="`Редактировать задачу: ${task.title}`"
+              @click="startEditingTask(task.id)"
+            >
+              Редактировать
+            </button>
             <button
               type="button"
               class="task-delete"
-              :disabled="deletingTaskId !== null"
+              :disabled="deletingTaskId !== null || updatingTaskId !== null"
               :aria-label="`Удалить задачу: ${task.title}`"
               @click="deleteTaskById(task.id)"
             >

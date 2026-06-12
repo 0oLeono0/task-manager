@@ -14,6 +14,8 @@ interface TasksState {
   isCreating: boolean
   updatingTaskId: number | null
   deletingTaskId: number | null
+  editingTaskId: number | null
+  editingTitle: string
   errText: string
   formErrText: string
   actionErrText: string
@@ -27,6 +29,8 @@ export const useTasksStore = defineStore('tasks', {
     isCreating: false,
     updatingTaskId: null,
     deletingTaskId: null,
+    editingTaskId: null,
+    editingTitle: '',
     errText: '',
     formErrText: '',
     actionErrText: '',
@@ -86,6 +90,45 @@ export const useTasksStore = defineStore('tasks', {
       }
     },
 
+    async updateTaskTitle() {
+      if (this.updatingTaskId !== null) return
+
+      const id = this.editingTaskId
+      if (id === null) return
+
+      const task = this.tasks.find((task) => task.id === id)
+      if (!task) {
+        this.cancelEditingTask()
+        return
+      }
+
+      const trimmedTitle = this.editingTitle.trim()
+      if (trimmedTitle === '') {
+        this.actionErrText = 'Название не может быть пустым'
+        return
+      }
+
+      this.actionErrText = ''
+      this.updatingTaskId = id
+
+      try {
+        const updatedTask = await updateTask(id, { title: trimmedTitle })
+        const taskIndex = this.tasks.indexOf(task)
+        if (taskIndex === -1) {
+          this.cancelEditingTask()
+          return
+        }
+
+        this.tasks[taskIndex] = updatedTask
+        this.editingTaskId = null
+        this.editingTitle = ''
+      } catch {
+        this.actionErrText = 'Не удалось обновить задачу. Попробуйте еще раз.'
+      } finally {
+        this.updatingTaskId = null
+      }
+    },
+
     async deleteTaskById(id: number) {
       if (this.deletingTaskId !== null) return
 
@@ -100,6 +143,20 @@ export const useTasksStore = defineStore('tasks', {
       } finally {
         this.deletingTaskId = null
       }
+    },
+
+    startEditingTask(id: number) {
+      const task = this.tasks.find((task) => task.id === id)
+      if (!task) return
+
+      this.editingTaskId = id
+      this.editingTitle = task.title
+    },
+
+    cancelEditingTask() {
+      this.editingTaskId = null
+      this.editingTitle = ''
+      this.actionErrText = ''
     },
   },
 })

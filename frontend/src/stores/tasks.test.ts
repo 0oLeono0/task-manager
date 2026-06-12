@@ -25,6 +25,8 @@ describe('tasks store', () => {
     expect(store.isCreating).toBe(false)
     expect(store.updatingTaskId).toBeNull()
     expect(store.deletingTaskId).toBeNull()
+    expect(store.editingTaskId).toBeNull()
+    expect(store.editingTitle).toBe('')
     expect(store.errText).toBe('')
     expect(store.formErrText).toBe('')
     expect(store.actionErrText).toBe('')
@@ -111,6 +113,72 @@ describe('tasks store', () => {
     expect(store.actionErrText).toBe('')
   })
 
+  it('updates task title successfully', async () => {
+    const store = useTasksStore()
+    const task: Task = { id: 1, title: 'Prepare README', completed: false }
+    const updatedTask: Task = { ...task, title: 'Update README' }
+
+    store.tasks = [task]
+    vi.mocked(updateTask).mockResolvedValue(updatedTask)
+
+    store.startEditingTask(task.id)
+
+    expect(store.editingTaskId).toBe(task.id)
+    expect(store.editingTitle).toBe(task.title)
+
+    store.editingTitle = '  Update README  '
+
+    await store.updateTaskTitle()
+
+    expect(updateTask).toHaveBeenCalledTimes(1)
+    expect(updateTask).toHaveBeenCalledWith(task.id, { title: 'Update README' })
+    expect(store.tasks).toEqual([updatedTask])
+    expect(store.editingTaskId).toBeNull()
+    expect(store.editingTitle).toBe('')
+    expect(store.updatingTaskId).toBeNull()
+    expect(store.actionErrText).toBe('')
+  })
+
+  it('keeps task draft and stores action error when title update fails', async () => {
+    const store = useTasksStore()
+    const task: Task = { id: 1, title: 'Prepare README', completed: false }
+
+    store.tasks = [task]
+    vi.mocked(updateTask).mockRejectedValue(new Error('network error'))
+
+    store.startEditingTask(task.id)
+    store.editingTitle = 'Update README'
+
+    await store.updateTaskTitle()
+
+    expect(updateTask).toHaveBeenCalledTimes(1)
+    expect(updateTask).toHaveBeenCalledWith(task.id, { title: 'Update README' })
+    expect(store.tasks).toEqual([task])
+    expect(store.editingTaskId).toBe(task.id)
+    expect(store.editingTitle).toBe('Update README')
+    expect(store.actionErrText).not.toBe('')
+    expect(store.updatingTaskId).toBeNull()
+  })
+
+  it('does not call API and keeps editing draft when title is blank', async () => {
+    const store = useTasksStore()
+    const task: Task = { id: 1, title: 'Prepare README', completed: false }
+
+    store.tasks = [task]
+
+    store.startEditingTask(task.id)
+    store.editingTitle = '   '
+
+    await store.updateTaskTitle()
+
+    expect(updateTask).not.toHaveBeenCalled()
+    expect(store.tasks).toEqual([task])
+    expect(store.editingTaskId).toBe(task.id)
+    expect(store.editingTitle).toBe('   ')
+    expect(store.actionErrText).not.toBe('')
+    expect(store.updatingTaskId).toBeNull()
+  })
+
   it('keeps task unchanged and stores action error when toggle fails', async () => {
     const store = useTasksStore()
     const task: Task = { id: 1, title: 'Check tasks API', completed: false }
@@ -158,5 +226,31 @@ describe('tasks store', () => {
     expect(store.tasks).toEqual([task])
     expect(store.deletingTaskId).toBeNull()
     expect(store.actionErrText).not.toBe('')
+  })
+
+  it('starts editing a task with a title draft', () => {
+    const store = useTasksStore()
+    const task: Task = { id: 1, title: 'Prepare README', completed: false }
+
+    store.tasks = [task]
+
+    store.startEditingTask(task.id)
+
+    expect(store.editingTaskId).toBe(task.id)
+    expect(store.editingTitle).toBe(task.title)
+  })
+
+  it('cancels task editing', () => {
+    const store = useTasksStore()
+
+    store.editingTaskId = 1
+    store.editingTitle = 'Prepare README'
+    store.actionErrText = 'Название не может быть пустым'
+
+    store.cancelEditingTask()
+
+    expect(store.editingTaskId).toBeNull()
+    expect(store.editingTitle).toBe('')
+    expect(store.actionErrText).toBe('')
   })
 })

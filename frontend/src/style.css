@@ -141,7 +141,7 @@ h1 {
 .task-item {
   min-height: 56px;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr auto auto auto;
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
@@ -205,6 +205,78 @@ h1 {
   box-shadow: inset 0 0 0 4px #eef7f0;
 }
 
+.task-title-input {
+  min-width: 0;
+  height: 38px;
+  padding: 0 12px;
+  color: #172033;
+  background: #ffffff;
+  border: 1px solid #d9dee8;
+  border-radius: 8px;
+  outline: none;
+}
+
+.task-title-input:focus {
+  border-color: #315fbd;
+  box-shadow: 0 0 0 3px rgba(49, 95, 189, 0.14);
+}
+
+.task-edit {
+  min-height: 36px;
+  padding: 0 12px;
+  color: #315fbd;
+  background: #eef4ff;
+  border: 1px solid #c7d7f6;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.task-edit:hover {
+  background: #dfeaff;
+}
+
+.task-edit:disabled {
+  color: #687386;
+  background: #eef0f4;
+  border-color: #d9dee8;
+  cursor: wait;
+}
+
+.task-edit:focus-visible {
+  outline: 3px solid rgba(49, 95, 189, 0.22);
+  outline-offset: 2px;
+}
+
+.task-save {
+  min-height: 36px;
+  padding: 0 12px;
+  color: #ffffff;
+  background: #2f7d46;
+  border: 1px solid #2f7d46;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.task-save:hover {
+  background: #27683b;
+}
+
+.task-save:disabled {
+  color: #687386;
+  background: #eef0f4;
+  border-color: #d9dee8;
+  cursor: wait;
+}
+
+.task-save:focus-visible {
+  outline: 3px solid rgba(47, 125, 70, 0.22);
+  outline-offset: 2px;
+}
+
 .task-delete {
   min-height: 36px;
   padding: 0 12px;
@@ -266,6 +338,8 @@ h1 {
     grid-template-columns: auto 1fr;
   }
 
+  .task-save,
+  .task-edit,
   .task-delete {
     grid-column: 2;
     justify-self: start;
