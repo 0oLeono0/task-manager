@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -63,7 +64,15 @@ func main() {
 	}
 
 	r := app.router()
+	server := &http.Server{
+		Addr:              app.cfg.serverAddr,
+		Handler:           r,
+		ReadTimeout:       10 * time.Second,
+		ReadHeaderTimeout: 5 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
 
 	app.logger.Printf("server starting on address: %s", app.cfg.serverAddr)
-	app.logger.Fatal(http.ListenAndServe(app.cfg.serverAddr, r))
+	app.logger.Fatal(server.ListenAndServe())
 }
