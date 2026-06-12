@@ -61,13 +61,14 @@ postgres://task_manager_user:task_manager_password@localhost:5432/task_manager?s
 docker compose up -d postgres
 ```
 
-Применить текущую миграцию:
+Применить миграции:
 
 ```powershell
-psql $env:DATABASE_DSN -f backend/migrations/000001_create_tasks_table.up.sql
+migrate -path backend/migrations -database $env:DATABASE_DSN up
 ```
 
-Для этой команды нужен установленный PostgreSQL client / `psql`.
+Для этой команды нужен установленный `golang-migrate` CLI. Перед запуском должен
+быть задан `DATABASE_DSN`.
 
 Запустить backend:
 
