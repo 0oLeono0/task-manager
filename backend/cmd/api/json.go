@@ -11,6 +11,8 @@ type errorResponse struct {
 	Err string `json:"error"`
 }
 
+const maxJSONBodySize = 1 << 20
+
 func (app *application) writeJSON(w http.ResponseWriter, status int, data any) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -25,7 +27,14 @@ func (app *application) errorJSON(w http.ResponseWriter, status int, message str
 	}
 }
 
-func (app *application) readJSON(r *http.Request, dst any) error {
+func isRequestBodyTooLarge(err error) bool {
+	var maxBytesError *http.MaxBytesError
+	return errors.As(err, &maxBytesError)
+}
+
+func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any) error {
+	r.Body = http.MaxBytesReader(w, r.Body, maxJSONBodySize)
+
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 

@@ -57,8 +57,12 @@ func (app *application) getTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) createTaskHandler(w http.ResponseWriter, r *http.Request) {
 	inputTask := createTaskInput{}
-	err := app.readJSON(r, &inputTask)
+	err := app.readJSON(w, r, &inputTask)
 	if err != nil {
+		if isRequestBodyTooLarge(err) {
+			app.errorJSON(w, http.StatusRequestEntityTooLarge, "request body too large")
+			return
+		}
 		app.logger.Println(err)
 		app.errorJSON(w, http.StatusBadRequest, "invalid task")
 		return
@@ -94,8 +98,12 @@ func (app *application) updateTaskHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	inputTask := updateTaskInput{}
-	err = app.readJSON(r, &inputTask)
+	err = app.readJSON(w, r, &inputTask)
 	if err != nil {
+		if isRequestBodyTooLarge(err) {
+			app.errorJSON(w, http.StatusRequestEntityTooLarge, "request body too large")
+			return
+		}
 		app.errorJSON(w, http.StatusBadRequest, "invalid request")
 		return
 	}

@@ -269,6 +269,23 @@ func TestCreateTask_MultipleJSONValues(t *testing.T) {
 	}
 }
 
+func TestCreateTask_BodyTooLarge(t *testing.T) {
+	app := &application{
+		taskStore: &fakeStore{},
+		logger:    log.New(io.Discard, "", 0),
+	}
+
+	reqBody := strings.NewReader(`{"title":"` + strings.Repeat("a", maxJSONBodySize) + `"}`)
+	req := httptest.NewRequest(http.MethodPost, "/tasks", reqBody)
+	rec := httptest.NewRecorder()
+
+	app.router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("expected %d, got %d", http.StatusRequestEntityTooLarge, rec.Code)
+	}
+}
+
 func TestCreateTask_EmptyTitle(t *testing.T) {
 	app := &application{
 		taskStore: &fakeStore{},
