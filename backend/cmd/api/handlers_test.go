@@ -252,6 +252,23 @@ func TestCreateTask_UnknownField(t *testing.T) {
 	}
 }
 
+func TestCreateTask_MultipleJSONValues(t *testing.T) {
+	app := &application{
+		taskStore: &fakeStore{},
+		logger:    log.New(io.Discard, "", 0),
+	}
+
+	reqBody := strings.NewReader(`{"title": "test"} {"title": "second"}`)
+	req := httptest.NewRequest(http.MethodPost, "/tasks", reqBody)
+	rec := httptest.NewRecorder()
+
+	app.router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected %d, got %d", http.StatusBadRequest, rec.Code)
+	}
+}
+
 func TestCreateTask_EmptyTitle(t *testing.T) {
 	app := &application{
 		taskStore: &fakeStore{},

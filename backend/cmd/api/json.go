@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 )
 
@@ -27,5 +29,19 @@ func (app *application) readJSON(r *http.Request, dst any) error {
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 
-	return decoder.Decode(dst)
+	err := decoder.Decode(dst)
+	if err != nil {
+		return err
+	}
+
+	var extra json.RawMessage
+	err = decoder.Decode(&extra)
+	if errors.Is(err, io.EOF) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	return errors.New("body must contain only one JSON value")
 }
