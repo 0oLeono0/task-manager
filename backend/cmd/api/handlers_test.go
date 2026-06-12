@@ -235,6 +235,22 @@ func TestCreateTask_InvalidPayload(t *testing.T) {
 	}
 }
 
+func TestCreateTask_EmptyBody(t *testing.T) {
+	app := &application{
+		taskStore: &fakeStore{},
+		logger:    log.New(io.Discard, "", 0),
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/tasks", http.NoBody)
+	rec := httptest.NewRecorder()
+
+	app.router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected %d, got %d", http.StatusBadRequest, rec.Code)
+	}
+}
+
 func TestCreateTask_UnknownField(t *testing.T) {
 	app := &application{
 		taskStore: &fakeStore{},
